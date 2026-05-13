@@ -13,7 +13,7 @@
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//
 //******************************** Defines **********************************//
-#define AHT21DRI_DEBUG 1
+#define AHT21DRriver 1
 //******************************** Defines **********************************//
 //---------------------------------------------------------------------------//
 //******************************** Typedefs *********************************//
@@ -70,8 +70,8 @@ typedef struct bsp_aht21_driver_struct
 {
   /** 依赖接口（由外部注入，实现底层I2C、延时、时基等） */
   aht_i2c_driver_interface_t *p_i2c_driver_interface;
-  timebase_interface_t   *p_timebase_interface;
-  yield_interface_t      *p_yield_interface;
+  timebase_interface_t       *p_timebase_interface;
+  yield_interface_t          *p_yield_interface;
   /** 对外方法（供应用层调用，实现传感器初始化、读温湿度等） */
   /**对象实例化函数指针*/
   aht21_status_t (*pf_inst)(

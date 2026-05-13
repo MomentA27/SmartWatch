@@ -10,9 +10,9 @@
  */
 #ifdef  LOG_TAG
 #undef  LOG_TAG
-#define LOG_TAG       "AHT21DRI_DEBUG"
+#define LOG_TAG       "AHT21DRriver"
 #else // else of LOG_TAG
-#define LOG_TAG       "AHT21DRI_DEBUG"
+#define LOG_TAG       "AHT21DRriver"
 #endif // end of LOG_TAG
 #define IS_INITED                  (1 == inited)
 #define AHT21_MEASURE_WAITING_TIME (80         )
@@ -24,7 +24,7 @@ static uint8_t inited;  // 初始化状态
 //******************************** Variables ********************************//
 //---------------------------------------------------------------------------//
 //******************************** Macros ***********************************//
-#if defined(AHT21DRI_DEBUG) && defined(MYDEBUG)
+#if defined(AHT21DRriver) && defined(MYDEBUG)
 #define LOG_DEBUG(fmt, ...)  log_d("[%s][%s:%d][DEBUG] " fmt "\r\n", \
 LOG_TAG, __func__, __LINE__, ##__VA_ARGS__)
 #define LOG_ERROR(fmt, ...)  log_e("[%s][%s:%d][ERROR] " fmt "\r\n", \
