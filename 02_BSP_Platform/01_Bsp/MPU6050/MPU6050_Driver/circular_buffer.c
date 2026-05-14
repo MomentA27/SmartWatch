@@ -54,7 +54,7 @@ void data_readed(void *p_ctx)
 /**
  * @brief 初始化缓冲区
  */
-void buffer_init(circular_buffer_t *buffer, uint8_t size)
+void buffer_init(void *p_ctx, uint8_t size)
 {
     if (NULL == buffer)
     {
@@ -63,7 +63,8 @@ void buffer_init(circular_buffer_t *buffer, uint8_t size)
 #endif
         return;
     }
-
+    // 1. 将 void* 强制转换回你实际需要的类型
+    circular_buffer_t *buffer = (circular_buffer_t *)p_ctx;
     buffer->size = size;
     buffer->rflag = 0;
     buffer->wflag = 0;

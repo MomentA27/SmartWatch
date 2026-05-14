@@ -4,8 +4,9 @@
 #include "os_task_port.h"
 
 
+
 //创建任务
-uint8_t os_task_create(
+bool os_task_create(
     const char *task_name,
     os_task_func_t func_pointer,
     uint16_t stack_size,
@@ -14,7 +15,7 @@ uint8_t os_task_create(
     os_task_handler_t *task_handle
 ) {
   if (task_name == NULL || func_pointer == NULL || task_handle == NULL) {
-    return ERROR;
+    return false;
   }
 
   // 定义一个真正的 FreeRTOS 句柄用于接收底层返回值
@@ -33,24 +34,24 @@ uint8_t os_task_create(
   if (ret == pdPASS) {
     // 【核心解耦点】把原生句柄“抹除类型”后，赋值给上层的抽象句柄
     *task_handle = (os_task_handler_t)rtos_handle;
-    return SUCCESS;
+    return true;
   }
-  return ERROR;
+  return false;
 }
 
-uint8_t os_task_delete(os_task_handler_t task_handle) {
+bool os_task_delete(os_task_handler_t task_handle) {
   if (task_handle == NULL) {
-    return ERROR;
+    return false;
   }
 
   // 调用时，把抽象句柄强转回原生句柄
   vTaskDelete((TaskHandle_t)task_handle);
-  return SUCCESS;
+  return true;
 }
 
-uint8_t os_task_delay(uint32_t ms) {
+bool os_task_delay(uint32_t ms) {
   vTaskDelay(pdMS_TO_TICKS(ms));
-  return SUCCESS;
+  return true;
 }
 
 os_task_handler_t os_task_get_handle(void)

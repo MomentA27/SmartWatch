@@ -83,11 +83,12 @@ typedef struct {
  */
 typedef struct {
     void      *p_ctx;                          // 把上下文收归到接口内部
+    void     (*pf_buffer_init) (void *p_ctx,uint8_t size);
     uint8_t *(*pf_get_rbuffer_addr) (void *p_ctx);
     uint8_t *(*pf_get_wbuffer_addr) (void *p_ctx);
     void     (*pf_data_writed) (void *p_ctx);
     void     (*pf_data_readed) (void *p_ctx);
-} buffer_interface_t;
+}mpu6050_buffer_interface_t;
 /**
  * @brief 延时接口结构体
  * 提供微秒和毫秒级延时功能
@@ -115,7 +116,7 @@ typedef struct {
     /* 队列操作 */
     mpu6050_status_t (*os_queue_create) (uint32_t const item_num, uint32_t const item_size, void ** const queue_handle);
     mpu6050_status_t (*os_queue_put) (void * const queue_handle, void * const item, uint32_t const timeout);
-    mpu6050_status_t (*os_queue_put_isr) (void * const queue_handle, void * const item, long * const HigherPriorityTaskWoken);
+    mpu6050_status_t (*os_queue_put_isr) (void * const queue_handle, void * const item);
     mpu6050_status_t (*os_queue_get) (void * const queue_handle, void * const item, uint32_t const timeout);
     mpu6050_status_t (*os_queue_delete) (void * const queue_handle);
     /* 互斥锁操作 */
@@ -169,9 +170,9 @@ typedef struct bsp_mpu6050_driver {
 
 #ifdef OS_SUPPORTING
     /* 操作系统层接口 */
-    mpu6050_yield_interface_t *p_yield_interface;
-    mpu6050_os_interface_t *p_os_interface;
-    buffer_interface_t *p_buffer_interface;
+    mpu6050_yield_interface_t   *p_yield_interface;
+    mpu6050_os_interface_t      *p_os_interface;
+    mpu6050_buffer_interface_t  *p_buffer_interface;
     /* 操作系统对象句柄 */
     void *queue_handle;
     void *semaphore_mutex_handle;
@@ -214,7 +215,7 @@ typedef struct bsp_mpu6050_driver {
 mpu6050_status_t bsp_mpu6050_driver_inst(
     bsp_mpu6050_driver_t *p_mpu6050_driver,
     mpu6050_iic_driver_interface_t *p_iic_driver_interface,
-    buffer_interface_t *p_buffer_interface,
+    mpu6050_buffer_interface_t *p_buffer_interface,
 #ifdef OS_SUPPORTING
     mpu6050_yield_interface_t *p_yield_interface,
     mpu6050_os_interface_t *p_os_interfece,

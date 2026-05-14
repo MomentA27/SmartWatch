@@ -192,10 +192,19 @@ static mpu6050_status_t mpu_driver_set_rate(bsp_mpu6050_driver_t *p_mpu6050, uin
 }
 
 /**
- * 设置中断使能寄存器(INT_ENABLE)
- * @param[in] p_mpu6050  指向MPU6050驱动结构体的指针
- * @param[in] data       中断使能位掩码
- * @return  MPU6050_OK 成功; 其他 写入寄存器失败
+ * @brief 设置中断使能
+ * @param[in,out] p_mpu6050 MPU驱动结构体指针
+ * @param[in] data 中断使能设置值
+ *|data |    中断名称
+ *|BIT0	| 控制数据准备中断
+ *|BIT1	|    *预留*
+ *|BIT2	|  	 *预留*
+ *|BIT3	| I2C主机相关中断
+ *|BIT4	| FIFO 溢出中断
+ *|BIT5	|   控制静态
+ *|BIT6	| 检测运动中断
+ *|BIT7	| 自由落体中断
+ * @return 执行状态
  */
 mpu6050_status_t mpu_driver_set_interrupt_enable(bsp_mpu6050_driver_t *p_mpu6050, uint8_t data)
 {
@@ -234,10 +243,20 @@ static mpu6050_status_t mpu_driver_set_INT_level(bsp_mpu6050_driver_t *p_mpu6050
 }
 
 /**
- * 设置用户控制寄存器(USER_CTRL):控制FIFO/I2C_MST等
- * @param[in] p_mpu6050  指向MPU6050驱动结构体的指针
- * @param[in] data       用户控制位掩码
- * @return  MPU6050_OK 成功; 其他 写入寄存器失败
+ * @brief 设置用户控制寄存器
+ * @param[in,out] p_mpu6050 MPU驱动结构体指针
+ * @param[in] data 用户控制设置值
+ * |---------------------------------------------------------------|
+ * |  BIT7     |    BIT6       |   BIT5        |    BIT4    | BIT3 |
+ * |-----------|---------------|---------------|------------|------|
+ * |   /       |  FIFO_EN      |I2C_MST_EN     | I2C_IF_DIS |  /   |
+ * |-----------|---------------|---------------|------------|------|
+ * |-----------|---------------|---------------|------------|------|
+ * |  BIT2     |    BIT1       |    BIT0       |            |      |
+ * |-----------|---------------|---------------|------------|------|
+ * |FIFO_RESET | I2C_MST_RESET |SIG_COND_RESET |            |      |
+ * |---------------------------------------------------------------|
+ * @return 执行状态
  */
 static mpu6050_status_t mpu_driver_set_user_ctrl(bsp_mpu6050_driver_t *p_mpu6050, uint8_t data)
 {
@@ -249,10 +268,29 @@ static mpu6050_status_t mpu_driver_set_user_ctrl(bsp_mpu6050_driver_t *p_mpu6050
 }
 
 /**
- * 写电源管理寄存器1(PWR_MGMT1):控制时钟源/睡眠/复位
- * @param[in] p_mpu6050  指向MPU6050驱动结构体的指针
- * @param[in] data       电源管理1位掩码
- * @return  MPU6050_OK 成功; 其他 写入寄存器失败
+ * @brief 设置电源管理1寄存器
+ * @param[in,out] p_mpu6050 MPU驱动结构体指针
+ * @param[in] data 电源管理1设置值
+ *|------------------------------------ |
+ *|BIT7：置位后所有传感器恢复默认值           |
+ *|BIT6：置位后进入睡眠模式                 |
+ *|BIT5：置位切没有进入睡眠模式则MPU进行循环模式|
+ *|BIT4：保留                            |
+ *|BIT3：置位禁止温度传感器                 |
+ *|BIT[0~2]：配置时钟                     |
+ *|-------------------------------------|
+ *|BIT[0~2]的值      时钟        |
+ *|----------------------------|
+ *|    0          内部时钟       |
+ *|    1        x轴陀螺仪锁相环   |
+ *|    2        Y轴陀螺仪锁相环   |
+ *|    3        z轴陀螺仪锁相环   |
+ *|    4        外部32.768kHz   |
+ *|    5        外部19.2MHz     |
+ *|    6            保留        |
+ *|    7        关闭所有时钟      |
+ *|----------------------------|
+ * @return 执行状态
  */
 static mpu6050_status_t mpu_driver_set_pwr_mgmt1_reg(bsp_mpu6050_driver_t *p_mpu6050, uint8_t data)
 {
@@ -264,10 +302,20 @@ static mpu6050_status_t mpu_driver_set_pwr_mgmt1_reg(bsp_mpu6050_driver_t *p_mpu
 }
 
 /**
- * 写电源管理寄存器2(PWR_MGMT2):控制各轴待机状态
- * @param[in] p_mpu6050  指向MPU6050驱动结构体的指针
- * @param[in] data       电源管理2位掩码
- * @return  MPU6050_OK 成功; 其他 写入寄存器失败
+ * @brief 设置电源管理2寄存器
+ * @param[in,out] p_mpu6050 MPU驱动结构体指针
+ * @param[in] data 电源管理2设置值
+ *          置位为休眠，清零为正常工作，
+ * BIT7：x轴陀螺仪休眠   BIT4：x轴加速度计休眠
+ * BIT6：y轴陀螺仪休眠   BIT3：y轴加速度计休眠
+ * BIT5：z轴陀螺仪休眠   BIT2：z轴加速度计休眠
+ *仅当传感器处于 “循环睡眠 - 唤醒 ” 模式有效
+ * BIT[0,1]     唤醒周期
+ *    0         1.25ms
+ *    1          2.5ms
+ *    2            5ms
+ *    3           10ms
+ * @return 执行状态
  */
 static mpu6050_status_t mpu_driver_set_pwr_mgmt2_reg(bsp_mpu6050_driver_t *p_mpu6050, uint8_t data)
 {
@@ -279,10 +327,12 @@ static mpu6050_status_t mpu_driver_set_pwr_mgmt2_reg(bsp_mpu6050_driver_t *p_mpu
 }
 
 /**
- * 设置FIFO使能寄存器(FIFO_EN):选择哪些传感器数据进入FIFO
- * @param[in] p_mpu6050  指向MPU6050驱动结构体的指针
- * @param[in] data       FIFO使能位掩码
- * @return  MPU6050_OK 成功; 其他 写入寄存器失败
+ * @brief 设置FIFO使能寄存器
+ * @param[in,out] p_mpu6050 MPU驱动结构体指针
+ * @param[in] data FIFO使能设置值
+ * Bit7	Bit6	Bit5	Bit4	Bit3	Bit2	Bit1	Bit0
+ * 温度	陀螺仪X 陀螺仪Y  陀螺仪Z  加速度计  从设备 2  从设备1 从设备 0
+ * @return 执行状态
  */
 static mpu6050_status_t mpu_driver_set_fifo_en_reg(bsp_mpu6050_driver_t *p_mpu6050, uint8_t data)
 {
@@ -571,6 +621,7 @@ void int_interrupt_callback(void *p_mpu6050, void *p_data)
     ret = mpu_driver_get_all_data(p_mpu_driver, (mpu6050_data_t*)p_data); ///< 非OS: 同步读取全部数据
     if (MPU6050_OK != ret) { LOG_ERROR("int_interrupt_callback mpu6050_get_all_data error"); LOG_ERROR("ret = %d", ret); }
 #else
+    // 1. 获取环形缓冲区的写入地址
     uint8_t *wbuff = NULL;
 
     // 修正：使用正确的变量名 circular_buf 和函数指针名 pfget_wbuffer_addr
@@ -608,15 +659,13 @@ void int_interrupt_callback(void *p_mpu6050, void *p_data)
 void dma_interrupt_callback(void *p_mpu6050, void *p_data)
 {
     LOG_DEBUG("=====dma_interrupt_callback start=====");
+    ASSERT_NOT_NULL(p_mpu6050);
     mpu6050_status_t ret = MPU6050_OK;
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bsp_mpu6050_driver_t *p_mpu_driver = NULL;
-    ASSERT_NOT_NULL(p_mpu6050);
     p_mpu_driver = (bsp_mpu6050_driver_t*)p_mpu6050;
     uint32_t timestamp_end = p_mpu_driver->p_timebase_interface->pf_get_tick_count(); ///< 记录DMA传输结束时间戳
     LOG_DEBUG("get timestamp end : %d", timestamp_end);
-
-    if (MPU6050_OK != ret) { LOG_ERROR("dma_interrupt_callback open interrupt error"); LOG_ERROR("ret = %d", ret); }
 
 #ifdef OS_SUPPORTING
     if (p_mpu_driver->p_buffer_interface != NULL && p_mpu_driver->p_buffer_interface->pf_data_writed != NULL) {
@@ -627,10 +676,10 @@ void dma_interrupt_callback(void *p_mpu6050, void *p_data)
 
     if (NULL == p_mpu_driver->queue_handle) { LOG_DEBUG("queue_handle is NULL"); }
     uint8_t tx_data = 1;
+    //将xHigherPriorityTaskWoken和portYIELD_FROM_ISR(xHigherPriorityTaskWoken)隐藏在os_queue_put_isr接口内部
     ret = p_mpu_driver->p_os_interface->os_queue_put_isr( ///< 在ISR中向队列发送通知
-            p_mpu_driver->queue_handle, &tx_data, &xHigherPriorityTaskWoken);
+            p_mpu_driver->queue_handle, &tx_data);
     if (MPU6050_OK != ret) { LOG_ERROR("dma_interrupt_callback put queue error"); LOG_ERROR("ret = %d", ret); }
-    portYIELD_FROM_ISR(xHigherPriorityTaskWoken); ///< 如果需要则触发任务切换
     LOG_DEBUG("-----dma_interrupt_callback end-----");
 #endif
 }
@@ -641,7 +690,7 @@ void dma_interrupt_callback(void *p_mpu6050, void *p_data)
  * @param[in] p_iic_driver_interface I2C接口指针
  * @param[in] p_buffer_interface    缓冲区接口指针
  * @param[in] p_yield_interface     (OS模式)任务让出接口指针
- * @param[in] p_os_interfece        (OS模式)RTOS接口指针
+ * @param[in] p_os_interface        (OS模式)RTOS接口指针
  * @param[in] p_delay_interface     延时接口指针
  * @param[in] p_timebase_interface  时基接口指针
  * @param[in] callback_register     注册INT中断回调的函数
@@ -654,10 +703,10 @@ void dma_interrupt_callback(void *p_mpu6050, void *p_data)
 mpu6050_status_t bsp_mpu6050_driver_inst(
     bsp_mpu6050_driver_t *p_mpu6050_driver,
     mpu6050_iic_driver_interface_t *p_iic_driver_interface,
-    buffer_interface_t *p_buffer_interface,  // <--- 新增这一行参数
+    mpu6050_buffer_interface_t *p_buffer_interface,  // <--- 新增这一行参数
 #ifdef OS_SUPPORTING
     mpu6050_yield_interface_t *p_yield_interface,
-    mpu6050_os_interface_t *p_os_interfece,
+    mpu6050_os_interface_t *p_os_interface,
 #endif
     mpu6050_delay_interface_t *p_delay_interface,
     mpu6050_timebase_interface_t *p_timebase_interface,
@@ -677,7 +726,7 @@ mpu6050_status_t bsp_mpu6050_driver_inst(
     ASSERT_NOT_NULL(p_iic_driver_interface);
 #ifdef OS_SUPPORTING
     ASSERT_NOT_NULL(p_yield_interface);
-    ASSERT_NOT_NULL(p_os_interfece);
+    ASSERT_NOT_NULL(p_os_interface);
 #endif
     ASSERT_NOT_NULL(p_delay_interface);
     ASSERT_NOT_NULL(p_timebase_interface);
@@ -714,23 +763,23 @@ mpu6050_status_t bsp_mpu6050_driver_inst(
     ASSERT_NOT_NULL(p_yield_interface->pf_rtos_yield); ///< 校验OS接口函数指针完整性
     p_mpu6050_driver->p_yield_interface = p_yield_interface; ///< 绑定任务让出接口
 
-    ASSERT_NOT_NULL(p_os_interfece->os_queue_create);
-    ASSERT_NOT_NULL(p_os_interfece->os_queue_put);
-    ASSERT_NOT_NULL(p_os_interfece->os_queue_put_isr);
-    ASSERT_NOT_NULL(p_os_interfece->os_queue_get);
-    ASSERT_NOT_NULL(p_os_interfece->os_queue_delete);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_create_mutex);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_delete_mutex);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_lock_mutex);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_unlock_mutex);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_create_binary);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_delete_binary);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_wait_binary);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_signal_binary);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_signal_binary_isr);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_signal_notify_isr);
-    ASSERT_NOT_NULL(p_os_interfece->os_semaphore_wait_notify);
-    p_mpu6050_driver->p_os_interface = p_os_interfece; ///< 绑定OS接口
+    ASSERT_NOT_NULL(p_os_interface->os_queue_create);
+    ASSERT_NOT_NULL(p_os_interface->os_queue_put);
+    ASSERT_NOT_NULL(p_os_interface->os_queue_put_isr);
+    ASSERT_NOT_NULL(p_os_interface->os_queue_get);
+    ASSERT_NOT_NULL(p_os_interface->os_queue_delete);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_create_mutex);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_delete_mutex);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_lock_mutex);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_unlock_mutex);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_create_binary);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_delete_binary);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_wait_binary);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_signal_binary);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_signal_binary_isr);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_signal_notify_isr);
+    ASSERT_NOT_NULL(p_os_interface->os_semaphore_wait_notify);
+    p_mpu6050_driver->p_os_interface = p_os_interface; ///< 绑定OS接口
 #endif
 
     p_mpu6050_driver->pf_deinit = mpu_driver_deinit; ///< 绑定驱动功能函数指针

@@ -21,7 +21,7 @@ typedef void* os_sema_handler_t;
  * @param init_count[in]  计数信号量的初始计数值（创建二值信号量时传 0 即可）
  * @return SUCCESS 或 ERROR
  */
-uint8_t os_sema_create(os_sema_handler_t *sema, bool is_binary, uint32_t max_count, uint32_t init_count);
+bool os_sema_create(os_sema_handler_t *sema, bool is_binary, uint32_t max_count, uint32_t init_count);
 
 /**
  * @brief 获取信号量 (Wait/Pend)
@@ -29,12 +29,12 @@ uint8_t os_sema_create(os_sema_handler_t *sema, bool is_binary, uint32_t max_cou
  * @param timeout [in] 超时时间（毫秒），传 0xFFFFFFFF 表示永久等待
  * @return SUCCESS 或 ERROR
  */
-uint8_t os_sema_take(os_sema_handler_t sema, uint32_t timeout);
+bool os_sema_take(os_sema_handler_t sema, uint32_t timeout);
 
 /**
  * @brief 释放信号量 (Post/Give)
  * @param sema    [in] 信号量句柄
  * @return SUCCESS 或 ERROR
  */
-uint8_t os_sema_give(os_sema_handler_t sema);
+bool os_sema_give(os_sema_handler_t sema);
 #endif //SMARTWATCH_STM32F4_OS_SEMA_PORT_H

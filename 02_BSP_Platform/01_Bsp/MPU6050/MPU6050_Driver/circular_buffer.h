@@ -46,6 +46,9 @@ typedef struct circular_buffer
  * @param[in] buffer 缓冲区实例指针
  * @param[in] size   缓冲区可容纳的数据包个数(每包固定14字节)
  */
-void buffer_init(circular_buffer_t *buffer, uint8_t size);
-
+void buffer_init(void *p_ctx, uint8_t size);
+uint8_t *get_wbuffer_addr(void *p_ctx);
+uint8_t *get_rbuffer_addr(void *p_ctx);
+void data_writed(void *p_ctx);
+void data_readed(void *p_ctx);
 #endif /* __CIRCULAR_BUFFER_H__ */
