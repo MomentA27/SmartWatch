@@ -26,9 +26,9 @@ extern circular_buffer_t circular_buffer;
 //******************************** 函数声明   *********************************//
 static void mpu6050_drv_init(motion_drv_t *dev);
 static void mpu6050_drv_deinit(motion_drv_t *dev);
-static uint8_t mpu6050_drv_getreqstate(motion_drv_t *dev);
-static uint8_t * mpu6050_drv_readdata(motion_drv_t *dev);
-static void mpu6050_drv_readdataend(motion_drv_t *dev);
+static uint8_t mpu6050_drv_getreqstate(motion_drv_t *dev);    //获取MPU6050数据请求状态
+static uint8_t * mpu6050_drv_readdata(motion_drv_t *dev);     //读取MPU6050传感器数据
+static void mpu6050_drv_readdataend(motion_drv_t *dev);       //结束MPU6050数据读取操作
 //******************************** 函数声明   *********************************//
 //---------------------------------------------------------------------------//
 //******************************** Functions ********************************//

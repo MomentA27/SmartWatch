@@ -3,7 +3,12 @@
 //
 //******************************** Includes *********************************//
 #include "service_sensor.h"
-
+#include "platform_os.h"
+#include "user_init.h"
+#include "watchdog_monitor.h"
+#include "motion_port.h"
+#include "mpu6050_driver.h"
+#include "temp_humi_port.h"
 //******************************** Includes *********************************//
 //---------------------------------------------------------------------------//
 //******************************** Defines **********************************//
@@ -23,9 +28,12 @@
 service_sensor_handler_t sensor_state =
 {
   .active_sensors = 0,                      //当前活跃的传感器掩码
-  .temp_sample_rate = 1000,                 //温度采样率(ms)
+  .temp_sample_rate = 10000,                //10s采样一次温湿度
+  .motion_sample_rate = 100,                //100ms采样一次陀螺仪
   .last_temp_sample = 0,                    //上一次温度采样时间
-  .temp_sampling_enabled = true            //温度采样使能
+  .last_motion_sample = 0,                  //上一次陀螺仪采样时间
+  .temp_sampling_enabled = true,            //温度采样使能
+  .motion_sampling_enabled = false          //陀螺仪采样使能
 };
 
 //******************************** Variables ********************************//
@@ -86,7 +94,6 @@ void sensor_polling_task(void *argument) {
 
 }
 
-
 void sensor_temp_humi(void)
 {
   float temp, humi;
@@ -109,6 +116,72 @@ void sensor_temp_humi(void)
   sensor_data[1] = humi;
   os_queue_put(g_sensor_data_queue, sensor_data, 0);
 }
+mpu6050_data_t mpu6050_data;
+void sensor_motion(void)
+{
+  static uint32_t virtual_timestamp = 0;
+  LOG_DEBUG("mpu6050 unpack task start");
+  uint8_t ret = 0;
+  uint8_t data = 0;
+  int16_t temp = 0;
+
+  // 获取传感器数据请求状态，校验返回值是否正常
+  ret = motion_getreqstate();
+  ASSERT_CONDITION(ret == 0);
+  LOG_DEBUG("unpack_task: data = %d\n", data);
+
+  // 获取传感器原始数据缓冲区地址
+  uint8_t *addr = motion_readdata();
+  LOG_DEBUG("unpack_task: addr = %p\n", addr);
+
+  // 解析温度数据（从地址+6和+7处读取16位数据），转换为摄氏度
+  temp = (int16_t)(*(addr + 6) << 8 | *(addr + 7));
+  mpu6050_data.temperature = 36.53 + temp/340.0;
+
+  // 解析原始加速度计数据（x/y/z轴，从地址0-5处读取16位数据）
+  mpu6050_data.accel_x_raw = (int16_t)(*(addr + 0) << 8 | *(addr + 1));
+  mpu6050_data.accel_y_raw = (int16_t)(*(addr + 2) << 8 | *(addr + 3));
+  mpu6050_data.accel_z_raw = (int16_t)(*(addr + 4) << 8 | *(addr + 5));
+
+  // 将原始加速度数据转换为g单位（除以对应灵敏度）
+  mpu6050_data.ax = mpu6050_data.accel_x_raw / 16384.0;
+  mpu6050_data.ay = mpu6050_data.accel_y_raw / 16384.0;
+  mpu6050_data.az = mpu6050_data.accel_z_raw / 14418.0;
+
+  // 解析原始陀螺仪数据（x/y/z轴，从地址8-13处读取16位数据）
+  mpu6050_data.gyro_x_raw = (int16_t)(*(addr + 8) << 8 | *(addr + 9));
+  mpu6050_data.gyro_y_raw = (int16_t)(*(addr + 10) << 8 | *(addr + 11));
+  mpu6050_data.gyro_z_raw = (int16_t)(*(addr + 12) << 8 | *(addr + 13));
+
+  // 将原始陀螺仪数据转换为度/秒（除以灵敏度131.0）
+  mpu6050_data.gx = mpu6050_data.gyro_x_raw / 131.0;
+  mpu6050_data.gy = mpu6050_data.gyro_y_raw / 131.0;
+  mpu6050_data.gz = mpu6050_data.gyro_z_raw / 131.0;
+
+  // 更新虚拟时间戳（模拟采样间隔，当前为26ms）
+  virtual_timestamp += 26;
+
+  // // 调用步数算法处理加速度数据，计算步数
+  // Step_Algo_Process(mpu6050_data.ax, mpu6050_data.ay, mpu6050_data.az, virtual_timestamp);
+  //
+  // // 获取当前步数，若与系统状态中的步数不一致则更新系统步数
+  // uint32_t step_count = Step_Get_Count();
+  // if(step_count != g_system_status.step_count)
+  // {
+  //   g_system_status.step_count = step_count;
+  // }
+  // 结束传感器数据读取操作，释放资源
+  motion_readdataend();
+  LOG_DEBUG("UnpackThread tevhTpwwomp=%f", mpu6050_data.temperature);
+  LOG_DEBUG("UnpapoTww2vckThread ax=%f", mpu6050_data.ax);
+  LOG_DEBUG("UnpackThread ay=%f", mpu6050_data.ay);
+  LOG_DEBUG("UnpackThread az=%f", mpu6050_data.az);
+  LOG_DEBUG("UnpackThrpwwTo7gbead gx=%f", mpu6050_data.gx);
+  LOG_DEBUG("UnpackThread gy=%f", mpu6050_data.gy);
+  LOG_DEBUG("UnpackThread gz=%f", mpu6050_data.gz);
+}
+
+
 
 /**
  * @brief 配置并启动指定传感器的采样任务（非阻塞，仅修改状态机）

@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.10)
 
 # 引入 temp_humi 子模块
 add_subdirectory(service_temp_humi_process)
+# 引入 temp_humi 子模块
+add_subdirectory(service_motion_process)
 # 引入 watchdog 子模块
 add_subdirectory(service_watchdog_monitor)
 
@@ -17,7 +19,7 @@ add_library(service STATIC
 target_link_libraries(service PUBLIC
         temp_humi_pro
         watchdog_monitor
-
+        motion_pro
 
         STM32_Drivers
         app

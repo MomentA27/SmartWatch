@@ -614,7 +614,7 @@ void int_interrupt_callback(void *p_mpu6050, void *p_data)
     // 1. 获取环形缓冲区的写入地址
     uint8_t *wbuff = NULL;
 
-    // 修正：使用正确的变量名 circular_buf 和函数指针名 pfget_wbuffer_addr
+    // 获取当前写包的物理首地址
     if (p_mpu_driver->p_driver_api->p_buffer != NULL && p_mpu_driver->p_driver_api->p_buffer->pf_get_wbuffer_addr != NULL) {
         wbuff = p_mpu_driver->p_driver_api->p_buffer->pf_get_wbuffer_addr(p_mpu_driver->p_driver_api->p_buffer->p_ctx);
     }
