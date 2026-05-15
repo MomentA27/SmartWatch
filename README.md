@@ -80,7 +80,7 @@ text
 │ I2C │ Delay │ Timebase │ OS│ │ Service │
 │ Yield │ Interrupt │ Buf │ │ 业务层API │
 └────────────────────────────┘ └────────────┘
----
+
 **实战案例：AHT21 温湿度传感器**
 - **Driver**：`aht21_driver.c` - 包含 vtable 与 `aht21_inst()` 构造函数，注入 I2C/Timebase/Yield 接口。
 - **Handler**：`aht21_handler.c` - FreeRTOS 事件驱动线程，负责数据接收与解包。
@@ -89,7 +89,6 @@ text
 
 > 💡 **扩展性**：未来若更换为 SHT30 传感器，仅需编写新的 Adapter 与 Driver，**Service 与 APP 层代码零修改**！
 
----
 
 ## 🔄 任务间通信模式
 
