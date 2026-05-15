@@ -19,6 +19,7 @@
 //---------------------------------------------------------------------------//
 //******************************** Variables *********************************//
 static uint8_t mpu6050_handler_is_initialized = HANDLER_UNINITIALIZED; // Handler 状态
+void *g_mpu6050_driver_ctx = NULL;  // ISR回调使用，存储驱动实例指针
 bsp_mpu6050_handler_t handler_instance = {0};    // MPU6050 Handler 实例
 //******************************** Variables ********************************//
 //---------------------------------------------------------------------------//
@@ -48,8 +49,8 @@ while(1);}                                        \
 //******************************** Macros ***********************************//
 //---------------------------------------------------------------------------//
 //******************************** 函数声明   *********************************//
-extern void (*pf_pin_interrupt_callback)(void *, void *);
-extern void (*pf_dma_interrupt_callback)(void *, void *);
+void (*pf_pin_interrupt_callback)(void *, void *) = NULL;
+void (*pf_dma_interrupt_callback)(void *, void *) = NULL;
 //******************************** 函数声明   *********************************//
 //---------------------------------------------------------------------------//
 //******************************** Functions ********************************//
@@ -158,7 +159,7 @@ void mpu6050_handler_thread(void *argument)
   LOG_DEBUG("mpuxxx_handler_thread start\n");
   ASSERT_NOT_NULL(argument);
   mpu6050_handler_input_args_t *p_input_args =(mpu6050_handler_input_args_t *)argument;
-  p_input_args->p_driver_api->p_buffer->pf_buffer_init(p_input_args->p_driver_api->p_buffer->p_ctx, 10); // ✨【修改】访问层级
+  p_input_args->p_driver_api->p_buffer->pf_buffer_init(p_input_args->p_driver_api->p_buffer->p_ctx, 2); // ✨【修改】访问层级
 
   //将p_handler_instance.p_driver与变量p_driver绑定 此时p_driver中全是0
   handler_instance.p_driver              = &p_driver;
@@ -171,6 +172,7 @@ void mpu6050_handler_thread(void *argument)
   ret = mpu6050_handler_inst(&handler_instance, p_input_args);
   ASSERT_CONDITION(MPU6050_OK == ret);
   LOG_DEBUG("=====mpuxxx_handler_inst success=====\n");
+  g_mpu6050_driver_ctx = handler_instance.p_driver;  // 导出驱动实例供ISR回调使用
 
   for (;;)
   {

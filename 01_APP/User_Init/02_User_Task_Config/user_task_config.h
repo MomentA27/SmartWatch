@@ -27,6 +27,7 @@ typedef enum
   tempHandlerTask = 0,
   WatchDog_Thread,
   SensorTask,
+  MpuHandlerTask,
   USER_IDX_MAX,
 }user_task_idx_e;
 //队列枚举 进行统一管理

@@ -525,9 +525,9 @@ static mpu6050_status_t mpu_fifo_init(bsp_mpu6050_driver_t* p_mpu6050)
 #else
     p_mpu6050->p_delay_interface->pf_delay_ms(10);
 #endif
-    ret = mpu_driver_set_fifo_en_reg(p_mpu6050, XG_FIFO_EN_BIT(1)| YG_FIFO_EN_BIT(1) | ZG_FIFO_EN_BIT(1) | ACCEL_FIFO_EN_BIT(1)); ///< 使能陀螺仪三轴+加速度计写入FIFO
+    ret = mpu_driver_set_fifo_en_reg(p_mpu6050, TEMP_FIFO_EN_BIT(1) | XG_FIFO_EN_BIT(1)| YG_FIFO_EN_BIT(1) | ZG_FIFO_EN_BIT(1) | ACCEL_FIFO_EN_BIT(1)); ///< 使能陀螺仪三轴+加速度计写入FIFO
     if (MPU6050_OK!=ret) { LOG_ERROR("mpu_write error"); return ret; }
-    ret = mpu_driver_set_INT_level(p_mpu6050, INT_RD_CLEAR_BIT(1) | INT_LEVEL_BIT(1)); ///< 中断读取清除 + 高电平有效
+    ret = mpu_driver_set_INT_level(p_mpu6050, INT_RD_CLEAR_BIT(1) | INT_LEVEL_BIT(1)); // 任意读清除中断状态 + INT引脚低电平有效(50us脉冲)
     if (MPU6050_OK != ret) { LOG_ERROR("set INT level error"); return ret; }
     ret = mpu_driver_set_interrupt_enable(p_mpu6050,FIFO_OVERFLOW_EN_BIT(1)); ///< 使能FIFO溢出中断
     if (MPU6050_OK != ret) { LOG_ERROR("set interrupt enable error"); return ret; }

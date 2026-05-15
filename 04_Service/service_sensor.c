@@ -64,6 +64,7 @@ while(1);}                                        \
 //---------------------------------------------------------------------------//
 //******************************** 函数声明   *********************************//
 void sensor_temp_humi(void);
+void sensor_motion(void);
 //******************************** 函数声明   *********************************//
 //---------------------------------------------------------------------------//
 //******************************** Functions ********************************//
@@ -81,6 +82,14 @@ void sensor_polling_task(void *argument) {
   {
     watchdog_feed(os_task_get_handle());
     current_time = os_get_tick_ms();
+    if(sensor_state.motion_sampling_enabled)
+    {
+      if((current_time - sensor_state.last_motion_sample) >= sensor_state.motion_sample_rate || sensor_state.last_motion_sample == 0)
+      {
+        sensor_motion();
+        sensor_state.last_motion_sample = current_time;
+      }
+    }
     if(sensor_state.temp_sampling_enabled)
     {
       if((current_time - sensor_state.last_temp_sample) >= sensor_state.temp_sample_rate || sensor_state.last_temp_sample == 0)
@@ -127,6 +136,7 @@ void sensor_motion(void)
 
   // 获取传感器数据请求状态，校验返回值是否正常
   ret = motion_getreqstate();
+  if (ret != MPU6050_OK) { return; }  // 队列超时则直接返回，不处理垃圾数据
   ASSERT_CONDITION(ret == 0);
   LOG_DEBUG("unpack_task: data = %d\n", data);
 
@@ -144,19 +154,19 @@ void sensor_motion(void)
   mpu6050_data.accel_z_raw = (int16_t)(*(addr + 4) << 8 | *(addr + 5));
 
   // 将原始加速度数据转换为g单位（除以对应灵敏度）
-  mpu6050_data.ax = mpu6050_data.accel_x_raw / 16384.0;
-  mpu6050_data.ay = mpu6050_data.accel_y_raw / 16384.0;
-  mpu6050_data.az = mpu6050_data.accel_z_raw / 14418.0;
+  mpu6050_data.ax = mpu6050_data.accel_x_raw / 2048.0;
+  mpu6050_data.ay = mpu6050_data.accel_y_raw / 2048.0;
+  mpu6050_data.az = mpu6050_data.accel_z_raw / 2048.0;
 
   // 解析原始陀螺仪数据（x/y/z轴，从地址8-13处读取16位数据）
   mpu6050_data.gyro_x_raw = (int16_t)(*(addr + 8) << 8 | *(addr + 9));
   mpu6050_data.gyro_y_raw = (int16_t)(*(addr + 10) << 8 | *(addr + 11));
   mpu6050_data.gyro_z_raw = (int16_t)(*(addr + 12) << 8 | *(addr + 13));
 
-  // 将原始陀螺仪数据转换为度/秒（除以灵敏度131.0）
-  mpu6050_data.gx = mpu6050_data.gyro_x_raw / 131.0;
-  mpu6050_data.gy = mpu6050_data.gyro_y_raw / 131.0;
-  mpu6050_data.gz = mpu6050_data.gyro_z_raw / 131.0;
+  // 将原始陀螺仪数据转换为度/秒（除以灵敏度16.4，对应+/-2000dps）
+  mpu6050_data.gx = mpu6050_data.gyro_x_raw / 16.4;
+  mpu6050_data.gy = mpu6050_data.gyro_y_raw / 16.4;
+  mpu6050_data.gz = mpu6050_data.gyro_z_raw / 16.4;
 
   // 更新虚拟时间戳（模拟采样间隔，当前为26ms）
   virtual_timestamp += 26;
@@ -217,5 +227,13 @@ void sensor_start_sampling(uint32_t sensor_mask, uint32_t sample_rate)
     sensor_state.temp_sampling_enabled = true;  /* 锟斤拷湿锟斤拷一锟斤拷锟斤拷锟?*/
     sensor_state.active_sensors |= SENSOR_HUMIDITY;
     LOG_DEBUG("Humidity sampling started");
+  }
+
+  if(sensor_mask & SENSOR_MOTION)
+  {
+    sensor_state.motion_sampling_enabled = true;
+    sensor_state.motion_sample_rate = sample_rate;
+    sensor_state.active_sensors |= SENSOR_MOTION;
+    LOG_DEBUG("Motion sampling started, rate: %dms", sample_rate);
   }
 }

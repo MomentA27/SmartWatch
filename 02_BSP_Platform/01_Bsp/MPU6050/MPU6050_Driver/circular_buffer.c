@@ -5,23 +5,22 @@
  * @par dependencies
  * - circular_buffer.h
  * @author liu
- * @brief 简易环形缓冲区，专为定长(14字节)DMA数据流设计
+ * @brief 简易环形缓冲区，专为定长(1024字节)DMA数据流设计
  * @version V1.0 2024-12-06
  * @note 1 tab == 4 spaces!
  *****************************************************************************/
 #include "circular_buffer.h"
 #include <stdlib.h>
-#include "Debug.h"
-
+#include "user_debug.h"
 circular_buffer_t circular_buf;
 
 /**
- * @brief 获取当前写包的物理首地址 (供DMA直接写入)
+ * @brief 它指向了环形缓冲区中当前可以写入数据的那一包（14字节）的起始物理地址。
  */
 uint8_t *get_wbuffer_addr(void *p_ctx)
 {
     circular_buffer_t *buffer = (circular_buffer_t *)p_ctx; // 强转回具体类型
-    return buffer->buffer + buffer->wflag * 14;
+    return buffer->buffer + buffer->wflag * buffer->packet_size;
 }
 
 /**
@@ -30,7 +29,7 @@ uint8_t *get_wbuffer_addr(void *p_ctx)
 uint8_t *get_rbuffer_addr(void *p_ctx)
 {
     circular_buffer_t *buffer = (circular_buffer_t *)p_ctx; // 强转回具体类型
-    return buffer->buffer + buffer->rflag * 14;
+    return buffer->buffer + buffer->rflag * buffer->packet_size;
 }
 
 /**
@@ -56,21 +55,20 @@ void data_readed(void *p_ctx)
  */
 void buffer_init(void *p_ctx, uint8_t size)
 {
-    if (NULL == buffer)
+    if (NULL == p_ctx)
     {
-#ifdef DEBUG_SENSOR_MPU6050_DRIVER
-        DEBUG_OUT("buffer is NULL");
-#endif
-        return;
+        log_e("buffer_init: p_ctx is NULL");
+        while(1);
     }
-    // 1. 将 void* 强制转换回你实际需要的类型
+    
     circular_buffer_t *buffer = (circular_buffer_t *)p_ctx;
     buffer->size = size;
+    buffer->packet_size = CIRCULAR_BUFFER_PACKET_SIZE;
     buffer->rflag = 0;
     buffer->wflag = 0;
 
-    /* 分配数据区：包数 * 14字节/包 */
-    buffer->buffer = (uint8_t *)malloc(size * 14);
+    /* 分配数据区：槽位数 * 每槽字节数 */
+    buffer->buffer = (uint8_t *)malloc(size * CIRCULAR_BUFFER_PACKET_SIZE);
 
     /* 绑定操作函数指针 */
     buffer->pfget_rbuffer_addr = get_rbuffer_addr;

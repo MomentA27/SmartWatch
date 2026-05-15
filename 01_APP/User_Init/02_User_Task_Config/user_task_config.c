@@ -7,6 +7,7 @@
 #include "aht21_handler.h"
 #include "service_sensor.h"
 #include "watchdog_monitor.h"
+#include "mpu6050_handler.h"
 
 
 //******************************** Includes *********************************//
@@ -22,6 +23,7 @@
 //---------------------------------------------------------------------------//
 //******************************** Variables *********************************//
 extern temp_humi_handler_input_api_t humitemp_input_api;
+extern mpu6050_handler_input_args_t mpu6050_input_args;
 //队列设置
 st_userqueuecfg_t st_userqueuecfg[Queue_IDX_MAX] =
 {
@@ -44,6 +46,7 @@ st_usersemacfg_t st_usersemacfg[Sema_IDX_MAX] =
 st_usertaskcfg_t st_usertaskcfg[USER_IDX_MAX] =
 {   /*    任务函数指针                任务名称                                  堆栈大小                      任务参数                     任务优先级                   任务句柄*/
   {temp_humi_handler_thread,  "tempHandlerTask" ,           512,        &humitemp_input_api,    		      PRI_HARD_REALTIME + 1,            NULL},  // 温度传感器线程
+  {mpu6050_handler_thread,     "MpuHandlerTask"  ,          1024,        &mpu6050_input_args,             PRI_HARD_REALTIME + 2,            NULL},  // MPU6050传感器处理线程
   {server_watchdog_task,      "WatchDog_Thread" ,           512,        NULL,                             PRI_SOFT_REALTIME + 3,            NULL},  // 看门狗线程
   {sensor_polling_task,       "SensorTask"      ,           512,        NULL,                             PRI_SOFT_REALTIME + 3,            NULL}   // 传感器轮询线程
 };

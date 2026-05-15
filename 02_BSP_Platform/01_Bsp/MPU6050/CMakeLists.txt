@@ -7,6 +7,7 @@ add_library(bsp_mpu6050 STATIC)
 target_sources(bsp_mpu6050 PRIVATE
         # driver 目录源文件
         MPU6050_Driver/mpu6050_driver.c
+	        MPU6050_Driver/circular_buffer.c
         # handler 目录源文件
         MPU6050_Handler/mpu6050_handler.c
 )

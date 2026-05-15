@@ -22,6 +22,9 @@
 #include "stm32f4xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+extern void (*pf_pin_interrupt_callback)(void *, void *);
+extern void (*pf_dma_interrupt_callback)(void *, void *);
+extern void *g_mpu6050_driver_ctx;
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -239,6 +242,7 @@ void DMA1_Stream4_IRQHandler(void)
   */
 void DMA1_Stream5_IRQHandler(void)
 {
+  HAL_DMA_IRQHandler(&hdma_i2c1_rx);
   /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
 
   /* USER CODE END DMA1_Stream5_IRQn 0 */
@@ -316,5 +320,19 @@ void DMA2_Stream3_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == PB5_MPU6050_INT_Pin && pf_pin_interrupt_callback) {
+        pf_pin_interrupt_callback(g_mpu6050_driver_ctx, NULL);
+    }
+}
+
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
+{
+    if (hi2c->Instance == I2C1 && pf_dma_interrupt_callback) {
+        pf_dma_interrupt_callback(g_mpu6050_driver_ctx, NULL);
+    }
+}
 
 /* USER CODE END 1 */
