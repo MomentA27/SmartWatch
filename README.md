@@ -67,6 +67,7 @@ text
 
 每个外设驱动均遵循 **Driver → Handler → Adapter/Wrapper** 管道，将硬件寄存器操作、RTOS并发处理与业务抽象完美解耦：
 
+
 text
 ┌─────────────┐ ┌─────────────┐ ┌────────────────────────┐
 │ Driver │ │ Handler │ │ Adapter + Wrapper │
@@ -79,7 +80,7 @@ text
 │ I2C │ Delay │ Timebase │ OS│ │ Service │
 │ Yield │ Interrupt │ Buf │ │ 业务层API │
 └────────────────────────────┘ └────────────┘
-
+---
 **实战案例：AHT21 温湿度传感器**
 - **Driver**：`aht21_driver.c` - 包含 vtable 与 `aht21_inst()` 构造函数，注入 I2C/Timebase/Yield 接口。
 - **Handler**：`aht21_handler.c` - FreeRTOS 事件驱动线程，负责数据接收与解包。
