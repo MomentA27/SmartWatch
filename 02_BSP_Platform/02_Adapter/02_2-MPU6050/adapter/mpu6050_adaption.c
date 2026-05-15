@@ -366,21 +366,20 @@ mpu6050_os_interface_t os_interface = {
   .os_semaphore_signal_binary = os_semaphore_signal_binary_myown,
 };
 #endif
-/*=================mpu6050驱动实例=======================*/
-bsp_mpu6050_driver_t bsp_mpu6050_driver = {
-  .p_iic_driver_interface = &iic_driver_interface,
-  .p_timebase_interface   = &timebase_interface,
-  .p_buffer_interface     = &buffer_interface,
-#ifdef OS_SUPPORTING
-  .p_yield_interface      = &yield_interface,
-  .p_os_interface         = &os_interface,
-#endif
+/*=================底层硬件驱动依赖注入=======================*/
+// 1. 组装 Driver 的依赖包（底层硬件）
+static mpu6050_driver_input_api_t mpu6050_driver_api = {
+  .p_iic_driver      = &iic_driver_interface,
+  .p_interrupt = NULL, // 如果不用
+  .p_delay           = &delay_interface,
+  .p_timebase        = &timebase_interface,
+  .p_buffer          = &buffer_interface,
+  .p_yield           = &yield_interface,
+  .p_os              = &os_interface
 };
-/*=================mpu6050驱动实例=======================*/
+// 2. 组装 Handler 的依赖包（业务调度）
 mpu6050_handler_input_args_t mpu6050_input_args = {
-    .p_iic_driver = &iic_driver_interface,
-    .p_delay      = &delay_interface,
-    .p_os         = &os_interface,
-    .p_timebase   = &timebase_interface,
-    .p_yield      = &yield_interface,
+  .p_driver_api = &mpu6050_driver_api,  // 👈 把 Driver 包直接丢给 Handler
+  .p_os         = &os_interface,         // Handler 自己也要用 OS 创建队列
+  .p_timebase   = &timebase_interface    // Handler 预留
 };

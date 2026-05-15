@@ -19,14 +19,11 @@
 //MPU6050 Handler 依赖资源输入参数结构体
 //作为一个"资源包裹" 注入给 Handler 层是实现"依赖倒置"的核心，Handler 层只认这些抽象接口，不直接依赖底层硬件或 RTOS，
 //从而保证 Handler 层代码的跨平台可移植性。
-typedef struct
-{
-  mpu6050_iic_driver_interface_t *p_iic_driver;  /**< I2C 通信抽象接口指针：提供底层的读写及 DMA 传输能力 */
-  mpu6050_timebase_interface_t   *p_timebase;    /**< 系统时基抽象接口指针：提供系统滴答计数，用于计算 DMA 传输耗时 */
-  mpu6050_delay_interface_t      *p_delay;       /**< 阻塞延时抽象接口指针：提供毫秒/微秒级延时，用于硬件复位等待 */
-  mpu6050_os_interface_t         *p_os;          /**< 操作系统抽象接口指针：提供队列、信号量等 RTOS 资源的操作能力 */
-  mpu6050_yield_interface_t      *p_yield;       /**< RTOS 任务让出接口指针：提供非阻塞式延时，让出 CPU 使用权 */
-  mpu6050_buffer_interface_t     *p_buffer;      /**< 缓冲区接口指针*/
+// ✨【修改】剥离底层硬件接口，只保留业务层需要的 OS 和 驱动包
+typedef struct {
+  mpu6050_driver_input_api_t *p_driver_api; /**< 驱动层依赖包：包含所有底层硬件抽象接口 */
+  mpu6050_os_interface_t     *p_os;         /**< OS操作抽象接口：Handler层自己创建队列/信号量需要 */
+  mpu6050_timebase_interface_t *p_timebase; /**< 时基接口：Handler层预留（可选） */
 } mpu6050_handler_input_args_t;
 
 /**
@@ -40,13 +37,19 @@ typedef struct
 {
   mpu6050_handler_input_args_t *p_input_args;     /**< 指向注入的依赖资源包裹，包含所有底层抽象接口 */
   bsp_mpu6050_driver_t         *p_driver;         /**< 指向底层 MPU6050 Driver 实例，用于控制硬件和读取传感器 */
+  // 运行时句柄
   void                         *p_queue_handle;   /**< 主数据队列句柄：ISR/DMA 完成后向此队列发通知，唤醒 Handler 线程 */
   void                         *p_unpack_queue_handle; /**< 解包处理队列句柄：用于数据解析阶段的缓冲与流控，解耦读取与计算 */
   void                         *p_semaphore_handle;  /**< 新增：二进制信号量句柄*/
   void                         *p_notify_handle;     /**< 新增：任务通知句柄（实际上是TaskHandle_t）*/
+
   uint32_t                     queue_item_size;   /**< 队列单个元素的字节大小 */
   uint32_t                     queue_length;      /**< 队列的最大深度（可容纳的元素个数） */
+
+  // ✨【新增】将运行时句柄打包，方便传给 Driver
+  mpu6050_driver_os_handles_t os_handles;
 }bsp_mpu6050_handler_t;
+
 //******************************** Typedefs *********************************//
 //---------------------------------------------------------------------------//
 //**************************** Interface Structs ****************************//

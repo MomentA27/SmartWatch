@@ -152,6 +152,25 @@ typedef struct {
     double kalman_angle_y;
 } mpu6050_data_t;
 
+
+// ✨【新增】Driver 专属的依赖注入包，将散装硬件接口聚合
+typedef struct {
+    mpu6050_iic_driver_interface_t     *p_iic_driver;
+    hardware_interrupt_interface_t     *p_interrupt;
+    mpu6050_delay_interface_t          *p_delay;
+    mpu6050_timebase_interface_t       *p_timebase;
+    mpu6050_buffer_interface_t         *p_buffer;
+    mpu6050_yield_interface_t          *p_yield;
+    mpu6050_os_interface_t             *p_os;
+} mpu6050_driver_input_api_t;
+
+// ✨【新增】Driver 运行时句柄包
+typedef struct {
+    void *queue_handle;
+    void *semaphore_handle;
+    void *notify_handle;
+} mpu6050_driver_os_handles_t;
+
 //**************************** Interface Structs ****************************//
 
 //---------------------------------------------------------------------------//
@@ -162,26 +181,14 @@ typedef struct {
  * 集成了所有底层硬件接口、操作系统接口以及驱动功能函数
  */
 typedef struct bsp_mpu6050_driver {
-    /* 核心层接口 */
-    mpu6050_iic_driver_interface_t *p_iic_driver_interface;
-    hardware_interrupt_interface_t *p_interrupt_interface;
-    mpu6050_delay_interface_t *p_delay_interface;
-    mpu6050_timebase_interface_t *p_timebase_interface;
+    /* ✨ 依赖接口统一通过 API 包访问 */
+    mpu6050_driver_input_api_t *p_driver_api;
 
 #ifdef OS_SUPPORTING
-    /* 操作系统层接口 */
-    mpu6050_yield_interface_t   *p_yield_interface;
-    mpu6050_os_interface_t      *p_os_interface;
-    mpu6050_buffer_interface_t  *p_buffer_interface;
-    /* 操作系统对象句柄 */
-    void *queue_handle;
-    void *semaphore_mutex_handle;
-    void *semaphore_binary_handle;
-    void *notify_handle;  // 补充缺失的句柄
-    /* 回调函数 */
+    mpu6050_driver_os_handles_t *p_os_handles;
     void (*pf_dma_completed_callback)(void);
     void (*pf_int_interrupt_callback)(void);
-#endif /* End of OS_SUPPORTING */
+#endif
 
     /* 驱动功能接口 */
     mpu6050_status_t (*pf_deinit) (struct bsp_mpu6050_driver *);
@@ -214,21 +221,12 @@ typedef struct bsp_mpu6050_driver {
 
 mpu6050_status_t bsp_mpu6050_driver_inst(
     bsp_mpu6050_driver_t *p_mpu6050_driver,
-    mpu6050_iic_driver_interface_t *p_iic_driver_interface,
-    mpu6050_buffer_interface_t *p_buffer_interface,
+    mpu6050_driver_input_api_t *p_driver_api,
 #ifdef OS_SUPPORTING
-    mpu6050_yield_interface_t *p_yield_interface,
-    mpu6050_os_interface_t *p_os_interfece,
-#endif /* End of OS_SUPPORTING */
-    mpu6050_delay_interface_t *p_delay_interface,
-    mpu6050_timebase_interface_t *p_timebase_interface,
+    mpu6050_driver_os_handles_t *p_os_handles,
+#endif
     void (*callback_register) (void (*callback)(void *, void *)),
     void (*callback_register_dma)(void (*callback)(void *, void *))
-#ifdef OS_SUPPORTING
-    ,void *queue_handle,
-    void *semaphore_handle,
-    void *notify_handle
-#endif /* End of OS_SUPPORTING */
 );
 
 //******************************** 函数声明 **********************************//

@@ -114,24 +114,20 @@ mpu6050_status_t mpu6050_handler_init(bsp_mpu6050_handler_t *p_handler_instance)
   ASSERT_CONDITION(MPU6050_OK == ret);
   ASSERT_NOT_NULL(p_handler_instance->p_semaphore_handle);
   /* 任务通知是绑定任务本身的 所以不需要创建notify 在mpu6050_thread中创建 */
+  // ✨【新增】打包由 Handler 动态创建的 OS 句柄
+  p_handler_instance->os_handles.queue_handle     = p_handler_instance->p_queue_handle;
+  p_handler_instance->os_handles.semaphore_handle = p_handler_instance->p_semaphore_handle;
+  p_handler_instance->os_handles.notify_handle    = p_handler_instance->p_notify_handle;
+  // ✨【修改】极度清爽的调用！不再手动拆包散装接口
   ret = bsp_mpu6050_driver_inst(
-        p_handler_instance->p_driver,                         // 1. 驱动实例
-        p_handler_instance->p_input_args->p_iic_driver,       // 2. IIC 接口
-        p_handler_instance->p_input_args->p_buffer,           // 3. Buffer 接口 (新增)
-  #ifdef OS_SUPPORTING
-        p_handler_instance->p_input_args->p_yield,            // 4. Yield 接口
-        p_handler_instance->p_input_args->p_os,               // 5. OS 接口
-  #endif
-        p_handler_instance->p_input_args->p_delay,            // 6. Delay 接口
-        p_handler_instance->p_input_args->p_timebase,         // 7. Timebase 接口
-        register_callback,                                  // 8. INT 回调注册
-        register_callback_dma                               // 9. DMA 回调注册
-  #ifdef OS_SUPPORTING
-        ,p_handler_instance->p_queue_handle                   // 10. 队列句柄
-        ,p_handler_instance->p_semaphore_handle               // 11. 信号量句柄 (新增)
-        ,p_handler_instance->p_notify_handle                  // 12. 任务通知句柄 (新增)
-  #endif
-    );
+      p_handler_instance->p_driver,
+      p_handler_instance->p_input_args->p_driver_api, // 透传依赖包
+#ifdef OS_SUPPORTING
+      &p_handler_instance->os_handles,                // 透传句柄包
+#endif
+      register_callback,
+      register_callback_dma
+  );
   ASSERT_CONDITION(MPU6050_OK == ret);
   mpu6050_handler_is_initialized = HANDLER_INITIALIZED;
   return ret;
@@ -144,11 +140,8 @@ mpu6050_status_t mpu6050_handler_inst(bsp_mpu6050_handler_t *p_handler_instance,
   LOG_DEBUG("mpuxxx_handler_inst start\n");
   ASSERT_NOT_NULL(p_handler_instance);
   ASSERT_NOT_NULL(p_input_args);
-  ASSERT_NOT_NULL(p_input_args->p_iic_driver);
-  ASSERT_NOT_NULL(p_input_args->p_buffer);
-  ASSERT_NOT_NULL(p_input_args->p_delay);
-  ASSERT_NOT_NULL(p_input_args->p_timebase);
-  ASSERT_NOT_NULL(p_input_args->p_yield);
+  ASSERT_NOT_NULL(p_input_args->p_driver_api); // 只需校验包存在
+  ASSERT_NOT_NULL(p_input_args->p_os);
 
   p_handler_instance->p_input_args = p_input_args;
   ret = mpu6050_handler_init(p_handler_instance);
@@ -165,7 +158,7 @@ void mpu6050_handler_thread(void *argument)
   LOG_DEBUG("mpuxxx_handler_thread start\n");
   ASSERT_NOT_NULL(argument);
   mpu6050_handler_input_args_t *p_input_args =(mpu6050_handler_input_args_t *)argument;
-  p_input_args->p_buffer->pf_buffer_init(p_input_args->p_buffer->p_ctx,10);
+  p_input_args->p_driver_api->p_buffer->pf_buffer_init(p_input_args->p_driver_api->p_buffer->p_ctx, 10); // ✨【修改】访问层级
 
   //将p_handler_instance.p_driver与变量p_driver绑定 此时p_driver中全是0
   handler_instance.p_driver              = &p_driver;

@@ -90,9 +90,7 @@ static temp_humi_status_t bsp_temp_humi_handler_init(
     LOG_ERROR("queue is ng");return ret;
   }
   ret = (temp_humi_status_t)aht21_inst(p_handler->p_aht21_instance,
-                                       p_handler->i2c_driver_interface,
-                                       p_handler->timebase_interface,
-                                       p_handler->yield_interface);
+                            p_handler->driver_api);
   if (ret)
   {
     LOG_ERROR("aht21_init is ng");return TEMP_HUMI_ERRORRESOURCE;
@@ -113,25 +111,22 @@ temp_humi_status_t bsp_temp_humi_handler_inst(
 {
   ASSERT_NOT_NULL(p_handler);
   ASSERT_NOT_NULL(p_input_api);
-  ASSERT_NOT_NULL(p_input_api->i2c_driver_interface);
+  ASSERT_NOT_NULL(p_input_api->driver_api);
   ASSERT_NOT_NULL(p_input_api->timebase_interface);
-  ASSERT_NOT_NULL(p_input_api->yield_interface);
   ASSERT_NOT_NULL(p_input_api->os_interface);
-  // 2. 将外部接口赋值给处理器结构体
-  p_handler->i2c_driver_interface = p_input_api->i2c_driver_interface;
+  // ✨【修改】只保存 Handler 应该看到的接口
+  p_handler->driver_api = p_input_api->driver_api;
   p_handler->timebase_interface = p_input_api->timebase_interface;
-  p_handler->yield_interface = p_input_api->yield_interface;
   p_handler->os_interface = p_input_api->os_interface;
 
-  // 3. 调用内部初始化函数
+  // 2. 调用 Driver 的实例化，直接把包传下去，不再经手具体接口！
   temp_humi_status_t ret = bsp_temp_humi_handler_init(p_handler);
-  if (TEMP_HUMI_OK != ret)
-  {
+  if (TEMP_HUMI_OK != ret) {
     LOG_DEBUG("TEMP_HUMI init is ng");
     return ret;
   }
 
-  // 4. 设置初始化完成标志
+  // 3. 设置初始化完成标志
   p_handler->p_private_data->init_flag = TEMP_HUMI_IS_INST;
   LOG_DEBUG("bsp_temp_humi_handler_inst end");
 

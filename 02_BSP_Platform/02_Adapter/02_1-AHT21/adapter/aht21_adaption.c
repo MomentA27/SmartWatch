@@ -112,7 +112,7 @@ void drv_adapter_temphumi_register(void)
 }
 
 // 2. 初始化i2c驱动接口结构体
-static aht_i2c_driver_interface_t i2c_driver_interface = {
+static aht21_i2c_driver_interface_t i2c_driver_interface = {
   .pf_i2c_init         = i2c_init_myown,
   .pf_i2c_deinit       = i2c_deinit_myown,
   .pf_i2c_start        = i2c_start_myown,
@@ -126,11 +126,11 @@ static aht_i2c_driver_interface_t i2c_driver_interface = {
   .pf_critical_exit    = critical_exit_myown
 };
 // 3. 初始化获取时基接口结构体
-static timebase_interface_t timebase_interface = {
+static aht21_timebase_interface_t timebase_interface = {
   .pf_get_tick_count = get_tick_count_myown
 };
 // 4. 初始化OS延时函数接口结构体
-static yield_interface_t yeiled_interface = {
+static aht21_yield_interface_t yeiled_interface = {
   .pf_rtos_yield = (void (*)(uint32_t)) os_delay_ms_myown
 };
 // 5， 初始化os操作接口结构体
@@ -140,12 +140,18 @@ static temp_humi_handler_os_api_t os_api= {
   .os_queue_put = os_queue_put_myown,
   .os_queue_get = os_queue_get_myown
 };
-// 6. 初始化
+// 2. 组装 Driver 的专属依赖包（引擎组装）
+static aht21_driver_input_api_t aht21_driver_api = {
+  .p_i2c_driver = &i2c_driver_interface,
+  .p_timebase   = &timebase_interface,
+  .p_yield      = &yeiled_interface
+};
+
+//  组装 Handler 的输入参数（驾驶员就座）
 temp_humi_handler_input_api_t humitemp_input_api = {
-  .i2c_driver_interface = &i2c_driver_interface,
-  .timebase_interface = &timebase_interface,
-  .yield_interface = &yeiled_interface,
-  .os_interface = &os_api
+  .driver_api         = &aht21_driver_api,      // 👈 引擎包直接丢给 Handler
+  .timebase_interface = &timebase_interface,    // Handler 自己也要用 Tick
+  .os_interface       = &os_api
 };
 //******************************** Variables ********************************//
 //---------------------------------------------------------------------------//

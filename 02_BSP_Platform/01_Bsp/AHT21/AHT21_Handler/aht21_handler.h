@@ -69,9 +69,10 @@ typedef struct
 typedef struct
 {
   /* 传递给驱动层的接口 */
-  aht_i2c_driver_interface_t *i2c_driver_interface;
-  timebase_interface_t       *timebase_interface  ;
-  yield_interface_t          *yield_interface     ;
+  aht21_driver_input_api_t   *driver_api; // 👈 替代原来的 I2C、Tick、Yield
+  //原本的timebase包含在driver_api中 hanlder无法访问 但由于handler层中有多时基函数的需求 所以需要加上自己的timebase接口
+  aht21_timebase_interface_t       *timebase_interface  ;
+  aht21_yield_interface_t          *yield_interface     ;
 
   /* os操作接口 */
   temp_humi_handler_os_api_t *os_interface;
@@ -87,10 +88,9 @@ typedef struct
 typedef struct
 {
   /* 传递给驱动层的接口 */
-  aht_i2c_driver_interface_t *i2c_driver_interface;
-  timebase_interface_t       *timebase_interface  ;
-  yield_interface_t          *yield_interface     ;
-
+  aht21_driver_input_api_t   *driver_api;       // 👈 只要包，不碰具体线束
+  /* Handler 自己算生命周期仍需要 Tick，保留 */
+  aht21_timebase_interface_t   *timebase_interface;
   /* os操作接口 */
   temp_humi_handler_os_api_t *os_interface;
 
